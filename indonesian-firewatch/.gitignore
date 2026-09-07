@@ -1,0 +1,31 @@
+.venv/
+venv/
+__pycache__/
+.env
+
+*.parquet
+*.csv
+
+logs/
+notes/
+
+# dbt
+dbt_project/target/
+dbt_project/logs/
+dbt_project/dbt_packages/
+
+# If using a local profile
+dbt_project/.dbt/.user.yml
+airflow/config/
+airflow/credentials/
+*.json
+notes.txt
+credentials/
+
+# dbt ignores
+.user.yml
+target/
+dbt_packages/
+logs/
+.env
+.csv
