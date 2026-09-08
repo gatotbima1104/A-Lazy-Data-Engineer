@@ -21,11 +21,16 @@ x-airflow-common:
     PROJECT_ID: ${PROJECT_ID}
     GOOGLE_CLOUD_PROJECT: ${PROJECT_ID}
     CLOUDSDK_CORE_PROJECT: ${PROJECT_ID}
+    PYTHONPATH: /opt/airflow
+    TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+    TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/airflow/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/airflow/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/includes:/opt/airflow/includes
+    - ${AIRFLOW_PROJ_DIR:-.}/utils:/opt/airflow/utils
     - .:/opt/airflow/project
     - ~/.config/gcloud:/home/airflow/.config/gcloud:ro
   user: "${AIRFLOW_UID:-50000}:0"
