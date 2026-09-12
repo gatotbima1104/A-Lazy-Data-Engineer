@@ -10,7 +10,7 @@ import pandas as pd
 from airflow.exceptions import AirflowSkipException
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.sdk import dag, task
-from includes.constant import LANDING_PREFIX, RAW_PREFIX
+from includes.constant import GCP_CONN_ID, LANDING_PREFIX, RAW_PREFIX
 from includes.notify import on_failure_callback, on_success_callback
 
 from utils.constant import BUCKET_NAME
@@ -30,7 +30,7 @@ def firms_detections_daily_partition():
 
     @task
     def list_landing_zips() -> list[str]:
-        hook = GCSHook()
+        hook = GCSHook(GCP_CONN_ID)
         objects = hook.list(bucket_name=BUCKET_NAME, prefix=LANDING_PREFIX)
         zip_objects = [
             obj for obj in objects
@@ -49,7 +49,7 @@ def firms_detections_daily_partition():
         on_failure_callback=on_failure_callback
     )
     def transform_zip_to_daily_pq(source: str):
-        hook = GCSHook()
+        hook = GCSHook(GCP_CONN_ID)
         zip_bytes = hook.download(
             bucket_name=BUCKET_NAME,
             object_name=source
