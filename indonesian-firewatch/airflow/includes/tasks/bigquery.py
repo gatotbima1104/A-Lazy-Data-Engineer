@@ -47,7 +47,7 @@ def load_fire_detection(source_object: str):
     return _create_load_task(
         task_id="load_fire_detection",
         source_uri=source_uri,
-        table_name="raw_fire_detections",
+        table_name="raw_detections",
         source_format="PARQUET",
     )
 

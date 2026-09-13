@@ -23,7 +23,7 @@ REGENCY_FILE = (
     / "regency.csv"
 )
 
-RAW_TABLE_NAME = "raw_fire_detections"
+RAW_TABLE_NAME = "raw_detections"
 
 
 print("=" * 60)
