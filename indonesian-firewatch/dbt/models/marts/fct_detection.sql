@@ -6,7 +6,13 @@
             'field': 'acquisition_date',
             'data_type': 'date',
             'granularity': 'day'
-        }
+        },
+        cluster_by=[
+            'province_id',
+            'regency_id',
+            'detection_type',
+            'confidence_level_label'
+        ]
     )
 }}
 
