@@ -22,8 +22,8 @@ PROVINCE_DESTINATION ="raw/reference/province.csv"
 REGENCY_DESTINATION="raw/reference/regency.csv"
 
 FIRE_DETECTION_DATE = Param(
-    "2026-01-01",
-    type="string",
+    default=None,
+    type=["null", "string"],
     format="date",
-    description="Fire detection date",
+    description="Process a single fire detection date.",
 )

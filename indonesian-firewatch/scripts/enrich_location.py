@@ -31,16 +31,45 @@ class FirmsLocationEnricher:
         value: str
     ) -> str:
         """
-        Normalize regency_name
+        Normalize regency name while preserving the
+        administrative type: KABUPATEN or KOTA.
+
+        Examples:
+            KABUPATEN BOGOR -> KABUPATEN_BOGOR
+            KOTA BOGOR      -> KOTA_BOGOR
         """
+
         if pd.isna(value):
             return ""
 
         value = str(value).strip().upper()
-        value = re.sub(r"^(KABUPATEN|KOTA)\s+", "", value)
-        value = re.sub(r"[^A-Z0-9]", "", value)
 
-        return REGENCY_ALIASES.get(value, value)
+        # Normalize whitespace
+        value = re.sub(r"\s+", " ", value)
+
+        # Detect administrative type
+        if value.startswith("KABUPATEN "):
+            admin_type = "KABUPATEN"
+            name = value[len("KABUPATEN "):]
+
+        elif value.startswith("KOTA "):
+            admin_type = "KOTA"
+            name = value[len("KOTA "):]
+
+        else:
+            admin_type = ""
+            name = value
+
+        # Remove punctuation from the regency name
+        name = re.sub(r"[^A-Z0-9]", "", name)
+
+        # Apply aliases
+        name = REGENCY_ALIASES.get(name, name)
+
+        if admin_type:
+            return f"{admin_type}_{name}"
+
+        return name
 
     def load_boundaries(
         self

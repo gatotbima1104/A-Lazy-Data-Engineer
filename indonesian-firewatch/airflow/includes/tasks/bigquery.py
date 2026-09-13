@@ -156,6 +156,24 @@ def load_dataframe_to_bq(
     """
     Load a Pandas DataFrame directly to BigQuery 
     """
+    
+    if data.empty:
+        print("No data to load.")
+        return
+
+    if "acq_date" not in data.columns:
+        raise ValueError("DataFrame must contain 'acq_date'.")
+    
+    dates = data["acq_date"].dropna().unique()
+
+    if len(dates) != 1:
+        raise ValueError(
+            f"Expected exactly one acq date, "
+            f"but found: {dates}"
+        )
+
+    acq_date = pd.Timestamp(dates[0]).date()
+    
     hook = BigQueryHook(gcp_conn_id = GCP_CONN_ID)
     client = hook.get_client(project_id = PROJECT_ID)
     
@@ -165,8 +183,28 @@ def load_dataframe_to_bq(
         f"{table_name}"
     )
     
-    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
-    job = client.load_table_from_dataframe(data, table_id, job_config=job_config)
+    # 1. Delete existing data for this date
+    delete_query = f"""
+        DELETE FROM `{table_id}`
+        WHERE SAFE_CAST(acq_date AS DATE) = DATE('{acq_date}')
+    """
+
+    client.query(delete_query).result()
+
+    print(f"Deleted existing RAW data for {acq_date}")
+    
+     # 2. Append new data
+    job_config = bigquery.LoadJobConfig(
+        write_disposition="WRITE_APPEND",
+        
+    )
+    
+    job = client.load_table_from_dataframe(
+        data,
+        table_id,
+        job_config
+    )
+    
     job.result()
 
     print(f"Loaded {len(data):,} rows into {table_id}")

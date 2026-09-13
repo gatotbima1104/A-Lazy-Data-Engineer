@@ -26,7 +26,7 @@ from dags.setup import (
     dag_id="batch_fire_detections",
     start_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
     catchup=False,
-    schedule=None,
+    schedule='@daily',
     tags=["firms", "batch"],
     on_success_callback=on_success_callback,
     params={

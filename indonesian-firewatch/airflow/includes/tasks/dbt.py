@@ -17,8 +17,14 @@ def _dbt_build(
     return BashOperator(
         task_id=task_id,
         bash_command=(
-            f'dbt build -s {target} '
-            "--vars '{\"fire_detection_date\": \"{{ params.date }}\"}'"
+            f"dbt build --select {target} "
+            "--vars "
+            "'{\"fire_detection_date\": "
+            "\"{% if params.date %}"
+            "{{ params.date }}"
+            "{% else %}"
+            "{{ logical_date | ds }}"
+            "{% endif %}\"}'"
         ),
         cwd=DBT_PROJECT_DIR,
         **kwargs
