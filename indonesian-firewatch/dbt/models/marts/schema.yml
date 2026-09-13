@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: dim_province
+    description: >
+      Dimension containing Indonesian province reference data.
+
+    columns:
+      - name: province_id
+        description: Unique identifier of the province.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: province_name
+        description: Name of the province.
+        data_tests:
+          - not_null
+
+  - name: dim_regency
+    description: >
+      Dimension containing Indonesian regency reference data
+      and its associated province.
+
+    columns:
+      - name: regency_id
+        description: Unique identifier of the regency.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: province_id
+        description: Identifier of the province associated with the regency.
+        data_tests:
+          - not_null
+
+      - name: regency_name
+        description: Name of the regency.
+        data_tests:
+          - not_null

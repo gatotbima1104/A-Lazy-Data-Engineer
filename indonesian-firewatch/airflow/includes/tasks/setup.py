@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(
     os.getenv(
         "PROJECT_ROOT",
@@ -24,7 +23,7 @@ REGENCY_FILE = (
 )
 
 RAW_TABLE_NAME = "raw_detections"
-
+DBT_PROJECT_DIR = "/opt/airflow/project/dbt"
 
 print("=" * 60)
 print("SETUP PATH DEBUG")

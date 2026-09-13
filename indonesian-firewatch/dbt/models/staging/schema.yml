@@ -1,0 +1,107 @@
+version: 2
+
+models:
+  - name: stg_detection
+    description: >
+      Staging model for NASA FIRMS fire detection data.
+      Standardizes column names and data types from the raw fire detection source.
+
+    columns:
+      - name: detection_id
+        description: >
+          Deterministic identifier generated from the attributes
+          defining the grain of a NASA FIRMS fire detection.
+        data_tests:
+          - not_null
+          - unique
+          
+      - name: latitude
+        description: Latitude of the detected fire location in decimal degrees.
+        data_tests:
+          - not_null
+
+      - name: longitude
+        description: Longitude of the detected fire location in decimal degrees.
+        data_tests:
+          - not_null
+
+      - name: brightness
+        description: Brightness temperature of the detected fire pixel.
+
+      - name: scan
+        description: Scan value representing the pixel scan dimension.
+
+      - name: track
+        description: Track value representing the pixel track dimension.
+
+      - name: acquisition_date
+        description: Date when the fire observation was acquired.
+        data_tests:
+          - not_null
+
+      - name: acquisition_time
+        description: Time when the fire observation was acquired.
+
+      - name: satellite
+        description: Satellite that detected the fire.
+        data_tests:
+          - not_null
+
+      - name: instrument
+        description: Satellite instrument used to detect the fire.
+
+      - name: confidence
+        description: Confidence level of the fire detection.
+
+      - name: version
+        description: Version of the processing type when processing the fire detection.
+
+      - name: brightness_temperature_t31
+        description: Brightness temperature from the T31 channel.
+
+      - name: fire_radiative_power
+        description: Fire Radiative Power (FRP) emitted by the detected fire.
+
+      - name: daynight
+        description: Indicates whether the detection was made during daytime or nighttime.
+
+      - name: detection_type
+        description: Numeric classification type of the fire detection.
+
+      - name: regency_id
+        description: Id of regency based on latitude & longitude.
+
+  - name: stg_regency
+    description: >
+      Staging model for Indonesian regency reference data.
+      Standardizes regency and province identifiers and regency names.
+
+    columns:
+      - name: regency_id
+        description: Id of the regency.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: province_id
+        description: Id of the province associated with the regency.
+        data_tests:
+          - not_null
+
+      - name: regency_name
+        description: Name of the regency.
+
+  - name: stg_province
+    description: >
+      Staging model for Indonesian province reference data.
+      Standardizes province identifiers and province names.
+
+    columns:
+      - name: province_id
+        description: Id of the province.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: province_name
+        description: Name of the province.

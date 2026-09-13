@@ -1,0 +1,27 @@
+name: indonesian_firewatch
+
+profile: dbt
+
+seed-paths: ["seeds"]
+model-paths: ["models", "sources"]
+macro-paths: ["macros"]
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  indonesian_firewatch:
+    +persist_docs:
+      relation: true
+      columns: true
+    staging:
+      +schema: "{{ env_var('BQ_DATASET_STAGING') }}"
+      +materialized: view
+    intermediate:
+      +schema: "{{ env_var('BQ_DATASET_INTERMEDIATE') }}"
+      +materialized: table
+    marts:
+      +schema: "{{ env_var('BQ_DATASET_MART') }}"
+      +materialized: table
+flags:
+  require_generic_test_arguments_property: true
