@@ -3,23 +3,11 @@ from datetime import datetime, timezone
 from airflow.sdk import dag
 from includes.notify import on_success_callback
 from includes.tasks.bigquery import load_provinces, load_regencies
-from includes.tasks.dbt import (
-    build_intermediate,
-    build_marts,
-    build_staging,
-    install_packages,
-)
-from includes.tasks.gcs import upload_reference_to_gcs
+from includes.tasks.dbt import build_intermediate, build_marts, build_staging
 from includes.tasks.native import enrich_and_load_location
 from includes.tasks.sensor import check_fire_detection_source
 
-from dags.setup import (
-    FIRE_DETECTION_DATE,
-    PROVINCE_DESTINATION,
-    PROVINCE_PATH,
-    REGENCY_DESTINATION,
-    REGENCY_PATH,
-)
+from dags.setup import FIRE_DETECTION_DATE, REFERENCE_GCS_SOURCES
 
 
 @dag(
@@ -27,7 +15,7 @@ from dags.setup import (
     start_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     schedule='@daily',
-    tags=["firms", "batch"],
+    tags=["batching", "bigquery", "gcs", "dbt"],
     on_success_callback=on_success_callback,
     params={
         "date": FIRE_DETECTION_DATE
@@ -35,26 +23,20 @@ from dags.setup import (
 )
 def batch_fire_detections():
     
-    regency_gcs = upload_reference_to_gcs.override(
-        task_id="upload_regency_reference"
-    )(
-        source_file=str(REGENCY_PATH),
-        destination=REGENCY_DESTINATION,
-    )
-
-    province_gcs = upload_reference_to_gcs.override(
-        task_id="upload_province_reference"
-    )(
-        source_file=str(PROVINCE_PATH),
-        destination=PROVINCE_DESTINATION,
-    )
+    regency = REFERENCE_GCS_SOURCES["regency"]
+    province = REFERENCE_GCS_SOURCES["province"]
     
-    load_regency = load_regencies(source_object=regency_gcs)
-    load_province = load_provinces(source_object=province_gcs)
+    # Load reference
+    load_reg = load_regencies(source_object=regency)
+    load_prov = load_provinces(source_object=province)
     
-    sensor_data_source = check_fire_detection_source()
+    # Check detection file w/ sensor
+    sensor_result = check_fire_detection_source()
+    
+    # Enrich location based on lat &lon
     enrich_location = enrich_and_load_location(
-        source_object=sensor_data_source
+        detection_source=sensor_result,
+        regency_source=regency
     )
     
     # dbt tasks
@@ -62,16 +44,11 @@ def batch_fire_detections():
     int_layer = build_intermediate()
     marts_layer = build_marts()
     
-    ## Dependencies
-    regency_gcs >> load_regency
-    province_gcs >> load_province
-
-    [
-        load_regency,
-        load_province,
-        sensor_data_source
-    ] >> enrich_location
+    # DAGs Dependencies
+    sensor_result >> enrich_location
     
+    [load_reg, load_prov] >> enrich_location
+
     enrich_location \
         >> stg_layer \
         >> int_layer \

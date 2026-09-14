@@ -18,13 +18,11 @@ class FirmsLocationEnricher:
     def __init__(
         self,
         boundary_dir: Path,
-        regency_file: Path
+        regency_data: pd.DataFrame
     ) -> None:
         self.boundary_dir = boundary_dir
-        self.regency_file = regency_file
-        
+        self.regency = self.load_regency(regency_data)
         self.boundaries = self.load_boundaries()
-        self.regency = self.load_regency()
 
     def normalize_name(
         self,
@@ -94,14 +92,18 @@ class FirmsLocationEnricher:
         )
 
     def load_regency(
-        self
+        self,
+        df: pd.DataFrame
     ) -> pd.DataFrame:
         """
         Load regency databases
         """
-        df = pd.read_csv(self.regency_file)
+        df = df.copy()
         
-        df["regency_key"] = df["regency_name"].map(self.normalize_name)
+        df["regency_key"] = (
+            df["regency_name"]
+            .map(self.normalize_name)
+        )
 
         return df
 

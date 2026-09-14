@@ -3,7 +3,7 @@ from datetime import datetime
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.sdk import get_current_context, task
 
-from includes.constant import GCP_CONN_ID, RAW_PREFIX
+from includes.constant import GCP_CONN_ID, PREFIX
 from includes.notify import on_failure_callback
 from utils.constant import BUCKET_NAME
 
@@ -29,7 +29,7 @@ def check_fire_detection_source() -> str:
     year = date_obj.strftime("%Y")
     month = date_obj.strftime("%m")
 
-    prefix = f"{RAW_PREFIX}{year}/{month}/"
+    prefix = f"{PREFIX["archive"]}{year}/{month}/"
 
     hook = GCSHook(
         gcp_conn_id=GCP_CONN_ID,

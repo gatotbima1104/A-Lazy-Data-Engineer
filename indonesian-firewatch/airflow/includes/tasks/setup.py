@@ -15,13 +15,6 @@ BOUNDARY_DIR = (
     / "with-districts"
 )
 
-REGENCY_FILE = (
-    PROJECT_ROOT
-    / "data"
-    / "kaggle"
-    / "regency.csv"
-)
-
 RAW_TABLE_NAME = "raw_detections"
 DBT_PROJECT_DIR = "/opt/airflow/project/dbt"
 

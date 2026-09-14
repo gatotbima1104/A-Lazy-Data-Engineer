@@ -15,6 +15,7 @@ x-airflow-common:
     AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
     AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    AIRFLOW_CONN_FIREWATCH_POSTGRES: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-firewatch:5432/${POSTGRES_DB}
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
     AIRFLOW_UID: ${AIRFLOW_UID:-50000}
@@ -40,6 +41,8 @@ x-airflow-common:
     &airflow-common-depends-on
     postgres:
       condition: service_healthy
+    db-firewatch:
+      condition: service_healthy
 
 services:
   postgres:
@@ -55,6 +58,40 @@ services:
       interval: 10s
       retries: 5
       start_period: 5s
+    restart: always
+  
+  db-firewatch:
+    # CHANGED: Separate PostgreSQL database for Firewatch/FIRMS
+    image: postgres:16-alpine
+
+    container_name: db-firewatch
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - firewatch-db-volume:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "${POSTGRES_USER}",
+          "-d",
+          "${POSTGRES_DB}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
     restart: always
 
   airflow-apiserver:
@@ -229,3 +266,4 @@ services:
     
 volumes:
   postgres-db-volume:
+  firewatch-db-volume:
