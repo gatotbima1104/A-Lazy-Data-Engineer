@@ -25,18 +25,22 @@ class FirmsLocationEnricher:
         
         self.boundaries = self.load_boundaries()
         self.regency = self.load_regency()
-    
+
     def normalize_name(
         self,
         value: str
     ) -> str:
         """
-        Normalize regency name while preserving the
-        administrative type: KABUPATEN or KOTA.
+        Normalize administrative name into a comparable key.
 
-        Examples:
-            KABUPATEN BOGOR -> KABUPATEN_BOGOR
+        Rules:
+            KABUPATEN BOGOR -> BOGOR
             KOTA BOGOR      -> KOTA_BOGOR
+            BOGOR           -> BOGOR
+            KOTA BOGOR      -> KOTA_BOGOR
+
+        This allows Kabupaten and Kota with the same name
+        to remain ambigiousnes.
         """
 
         if pd.isna(value):
@@ -44,32 +48,21 @@ class FirmsLocationEnricher:
 
         value = str(value).strip().upper()
 
-        # Normalize whitespace
         value = re.sub(r"\s+", " ", value)
 
-        # Detect administrative type
+        # KABUPATEN KEDIRI -> KEDIRI
         if value.startswith("KABUPATEN "):
-            admin_type = "KABUPATEN"
-            name = value[len("KABUPATEN "):]
+            value = value[len("KABUPATEN "):]
 
+        # KOTA BOGOR  -> KOTA_BOGOR
         elif value.startswith("KOTA "):
-            admin_type = "KOTA"
-            name = value[len("KOTA "):]
+            value = "KOTA_" + value[len("KOTA "):]
 
-        else:
-            admin_type = ""
-            name = value
+        # Remove spaces and special characters.
+        value = re.sub(r"[^A-Z0-9_]", "", value)
+        value = REGENCY_ALIASES.get(value, value)
 
-        # Remove punctuation from the regency name
-        name = re.sub(r"[^A-Z0-9]", "", name)
-
-        # Apply aliases
-        name = REGENCY_ALIASES.get(name, name)
-
-        if admin_type:
-            return f"{admin_type}_{name}"
-
-        return name
+        return value
 
     def load_boundaries(
         self
@@ -81,15 +74,17 @@ class FirmsLocationEnricher:
 
         for file in sorted(self.boundary_dir.glob("*.geojson")):
             gdf = gpd.read_file(file)
+
             gdf = gdf[["WADMKK", "WADMPR", "geometry"]].copy()
             
-            # Drop Nan of this subset
             gdf = gdf.dropna(subset=["WADMKK", "geometry"])
 
-            # Make the regency key
-            gdf["regency_key"] = gdf["WADMKK"].map(self.normalize_name)
+            # Kediri       -> KEDIRI
+            # Kota Kediri  -> KOTA_KEDIRI
+            gdf["regency_key"] = (gdf["WADMKK"].map(self.normalize_name))
+
             frames.append(gdf)
-        
+
         if not frames:
             raise FileNotFoundError(f"No GeoJSON files found in {self.boundary_dir}")
 
@@ -119,67 +114,90 @@ class FirmsLocationEnricher:
         """
         df = df.copy()
 
-        # Convert lat/lon to numeric -> error to Nan
         df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
         df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
-        
-        df = df.dropna(subset=["latitude", "longitude"])
 
-        # Ex. -6.20    | 106.80    | POINT(106.80 -6.20)
+        df = df.dropna(
+            subset=[
+                "latitude",
+                "longitude",
+            ]
+        )
+
         return gpd.GeoDataFrame(
             df,
-            geometry=gpd.points_from_xy(df["longitude"], df["latitude"]),
+            geometry=gpd.points_from_xy(
+                df["longitude"],
+                df["latitude"],
+            ),
             crs=STANDARD_GEOGRAPHIC_COORDINATE_SYSTEM,
         )
 
     def enrich_locations(
         self,
-        fires: gpd.GeoDataFrame
+        fires: gpd.GeoDataFrame,
     ) -> pd.DataFrame:
         """
-        Enrich location to detection
+        Enrich location to detection.
         """
-        
-        # -6.20    | 106.80    | JAKARTASELATAN
+
+        # WADMKK = "Kediri"
+        # -> regency_key = "KEDIRI"
         joined = gpd.sjoin(
             fires,
-            self.boundaries[["regency_key", "geometry"]],
+            self.boundaries[
+                [
+                    "regency_key",
+                    "geometry",
+                ]
+            ],
             how="left",
             predicate="intersects",
         )
 
-        # BATAM       | 2171
+
+        # KEDIRI       -> KABUPATEN KEDIRI -> 3506
+        # KOTA_KEDIRI  -> KOTA KEDIRI      -> 3571
         joined = joined.merge(
-            self.regency[["regency_id", "regency_key"]],
+            self.regency[
+                [
+                    "regency_id",
+                    "regency_key",
+                ]
+            ],
             on="regency_key",
             how="left",
+            validate="many_to_one",
         )
 
-        # Left off only the regency_id
         joined = joined.drop(
-            columns=["geometry", "index_right", "regency_key"],
+            columns=[
+                "geometry",
+                "index_right",
+                "regency_key",
+            ],
             errors="ignore",
         )
-        
-        # Convert id to Int64
-        joined["regency_id"] = joined["regency_id"].astype("Int64")
+
+        joined["regency_id"] = (
+            joined["regency_id"]
+            .astype("Int64")
+        )
 
         return pd.DataFrame(joined)
 
     def run(
         self,
-        fires: pd.DataFrame
-    ) -> None:
+        fires: pd.DataFrame,
+    ) -> pd.DataFrame:
         
         print("Loading FIRMS detections...")
         fires = self.create_fire_points(fires)
+
         print(f"Loaded {len(fires):,} fire detections")
         
         print("Performing point-in-polygon join...")
         enriched = self.enrich_locations(fires)
-        
+
         print("Enrich completed")
         return enriched
-        
-        # unmatched = enriched["regency_id"].isna().sum()
-        # print(f"Unmatched detections: {unmatched:,}")
