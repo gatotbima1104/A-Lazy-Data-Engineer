@@ -1,0 +1,103 @@
+{
+  "type": "record",
+  "name": "FirmsNrtDetection",
+  "namespace": "indonesia.firewatch.firms",
+  "doc": "NASA FIRMS Near Real-Time (NRT) fire detection event.",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Unique identifier for the fire detection event."
+    },
+    {
+      "name": "source",
+      "type": "string",
+      "doc": "Source system that produced the fire detection event."
+    },
+    {
+      "name": "source_table",
+      "type": "string",
+      "doc": "Source table from which the detection record was replayed."
+    },
+    {
+      "name": "schema_version",
+      "type": "string",
+      "doc": "Version of the event schema used to serialize this message."
+    },
+    {
+      "name": "published_timestamp",
+      "type": "string",
+      "doc": "Timestamp when the replay producer published the event to Pub/Sub, represented in ISO 8601 format."
+    },
+    {
+      "name": "latitude",
+      "type": "double",
+      "doc": "Latitude of the detected fire location in decimal degrees."
+    },
+    {
+      "name": "longitude",
+      "type": "double",
+      "doc": "Longitude of the detected fire location in decimal degrees."
+    },
+    {
+      "name": "brightness",
+      "type": "double",
+      "doc": "Brightness temperature of the fire pixel in Kelvin."
+    },
+    {
+      "name": "scan",
+      "type": "double",
+      "doc": "Along-scan pixel size or scan dimension associated with the detection."
+    },
+    {
+      "name": "track",
+      "type": "double",
+      "doc": "Along-track pixel size or track dimension associated with the detection."
+    },
+    {
+      "name": "acq_date",
+      "type": "string",
+      "doc": "Date when the satellite acquired the fire detection, formatted as YYYY-MM-DD."
+    },
+    {
+      "name": "acq_time",
+      "type": "int",
+      "doc": "Time when the satellite acquired the fire detection, represented as HHMM."
+    },
+    {
+      "name": "satellite",
+      "type": "string",
+      "doc": "Satellite that produced the fire detection."
+    },
+    {
+      "name": "instrument",
+      "type": "string",
+      "doc": "Satellite instrument used to produce the fire detection."
+    },
+    {
+      "name": "confidence",
+      "type": "string",
+      "doc": "Confidence indicator assigned to the fire detection by NASA FIRMS."
+    },
+    {
+      "name": "version",
+      "type": "string",
+      "doc": "FIRMS data processing or product version."
+    },
+    {
+      "name": "bright_t31",
+      "type": "double",
+      "doc": "Brightness temperature of the 11 micrometer (T31) band in Kelvin."
+    },
+    {
+      "name": "frp",
+      "type": "double",
+      "doc": "Fire Radiative Power (FRP) associated with the detection, measured in megawatts."
+    },
+    {
+      "name": "daynight",
+      "type": "string",
+      "doc": "Day or night indicator for the satellite observation."
+    }
+  ]
+}
