@@ -8,8 +8,7 @@
             'granularity': 'day'
         },
         cluster_by=[
-            'regency_id',
-            'province_id'
+            'regency_id'
         ]
     )
 }}
@@ -78,16 +77,20 @@ collecting_process as (
 select
 
     -- Mart key
-    concat(
-        cast(f.acquisition_date as string),
-        '-',
-        cast(l.province_id as string),
-        '-',
-        cast(l.regency_id as string)
-    ) as regency_province_daily_key,
+    {{ 
+        dbt_utils.generate_surrogate_key([
+            'f.acquisition_date',
+            'l.province_id',
+            'l.regency_id',
+            's.satellite_id',
+            'c.classification_id',
+            'cp.processing_id'
+        ])
+    }} as regency_province_daily_key,
 
     -- Date
     f.acquisition_date,
+    f.ingestion_source,
 
     -- Geography
     l.province_id,
@@ -140,6 +143,7 @@ left join collecting_process cp
 group by
     regency_province_daily_key,
     f.acquisition_date,
+    f.ingestion_source,
     l.province_id,
     l.province_name,
     l.regency_id,

@@ -20,11 +20,7 @@ def _dbt_build(
             f"dbt build --select {target} "
             "--vars "
             "'{\"fire_detection_date\": "
-            "\"{% if params.date %}"
-            "{{ params.date }}"
-            "{% else %}"
-            "{{ logical_date | ds }}"
-            "{% endif %}\"}'"
+            "\"{{ dag_run.conf.get('fire_detection_date', '') }}\"}'"
         ),
         cwd=DBT_PROJECT_DIR,
         **kwargs

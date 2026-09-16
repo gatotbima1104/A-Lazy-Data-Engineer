@@ -13,7 +13,7 @@ SCHEMA_PATH = (
 )
 DETECTION_SOURCE = "NASA_FIRMS"
 SUBSCRIPTION_PATH = f"projects/{PROJECT_ID}/subscriptions/{SUBSCRIPTION_ID}"
-BQ_TABLE_STREAMING = "fire_detection_nrt"
+BQ_TABLE_STREAMING_RAW = "fire_detection_nrt_raw"
 
 # Subscriber
 CONFIDENCE_LEVEL = {

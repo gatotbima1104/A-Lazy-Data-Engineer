@@ -10,7 +10,7 @@ from apache_beam.options.pipeline_options import PipelineOptions, StandardOption
 from fastavro import json_reader, parse_schema
 
 from streaming.setup import (
-    BQ_TABLE_STREAMING,
+    BQ_TABLE_STREAMING_RAW,
     FIRMS_NRT_SCHEMA,
     SCHEMA_PATH,
     SUBSCRIPTION_PATH,
@@ -92,7 +92,7 @@ def run():
                 
                 | "Write to BigQuery"
                 >> WriteToBigQuery(
-                    table=BQ_TABLE_STREAMING,
+                    table=BQ_TABLE_STREAMING_RAW,
                     dataset=BQ_DATASET_STREAMING,
                     project=PROJECT_ID,
                     schema=FIRMS_NRT_SCHEMA,

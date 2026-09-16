@@ -22,13 +22,12 @@ logger = logging.getLogger(__name__)
     start_date=datetime(2025, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     schedule=None,
-    tags=["ingestion", "postgres", 'gcs']
+    tags=["ingestion", "postgres", 'gcs'],
+    on_failure_callback=on_failure_callback
 )
 def postgres_ingest_to_gsc():
     
-    @task(
-        on_failure_callback=on_failure_callback
-    )
+    @task
     def ingest_postgres_to_gcs() -> None:
         
         pg_hook = PostgresHook(

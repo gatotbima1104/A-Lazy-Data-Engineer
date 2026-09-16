@@ -1,0 +1,211 @@
+version: 2
+
+models:
+
+  - name: agg_detection_daily
+    description: >
+      Daily aggregation of NASA FIRMS fire detections by acquisition date,
+      province, regency, satellite, detection classification, and collecting
+      process. Each row represents the aggregated fire detection activity
+      for one unique combination of date, administrative location, satellite,
+      detection classification, and processing configuration.
+
+    columns:
+
+      - name: regency_province_daily_key
+        data_type: string
+        description: >
+          Unique key identifying an aggregated detection record for a specific
+          acquisition date, province, and regency.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: acquisition_date
+        data_type: date
+        description: >
+          Date for which fire detection metrics are aggregated.
+        data_tests:
+          - not_null
+
+
+      - name: province_id
+        data_type: integer
+        description: >
+          Identifier of the province associated with the fire detections.
+        data_tests:
+          - not_null
+
+      - name: province_name
+        data_type: string
+        description: >
+          Name of the province associated with the fire detections.
+        data_tests:
+          - not_null
+
+      - name: regency_id
+        data_type: integer
+        description: >
+          Identifier of the regency associated with the fire detections.
+        data_tests:
+          - not_null
+
+      - name: regency_name
+        data_type: string
+        description: >
+          Name of the regency associated with the fire detections.
+        data_tests:
+          - not_null
+
+      - name: satellite
+        data_type: string
+        description: >
+          Original NASA FIRMS satellite identifier responsible for the
+          detection records.
+        data_tests:
+          - not_null
+
+      - name: satellite_label
+        data_type: string
+        description: >
+          Human-readable name of the satellite responsible for the
+          detection records.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['SUOMI NPP', 'NOAA-20', 'NOAA-21', 'UNKNOWN']
+
+      - name: instrument
+        data_type: string
+        description: >
+          Satellite instrument used to produce the fire detection.
+        data_tests:
+          - not_null
+
+      - name: confidence_level_label
+        data_type: string
+        description: >
+          Standardized confidence classification of the fire detections.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['HIGH', 'NOMINAL', 'LOW', 'UNKNOWN']
+
+      - name: daynight
+        data_type: string
+        description: >
+          Original NASA FIRMS day/night indicator.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['D', 'N']
+
+      - name: detection_period
+        data_type: string
+        description: >
+          Period of the day when the detections occurred.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['DAY', 'NIGHT', 'UNKNOWN']
+
+      - name: detection_type
+        data_type: integer
+        description: >
+          Original NASA FIRMS numeric detection type.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3]
+                quote: false
+
+      - name: detection_type_label
+        data_type: string
+        description: >
+          Human-readable classification of the detection type.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    'VEGETATION_FIRE',
+                    'ACTIVE_VOLCANO',
+                    'STATIC_LAND_SOURCE',
+                    'OFFSHORE',
+                    'UNKNOWN'
+                  ]
+
+      - name: version
+        data_type: string
+        description: >
+          Original NASA FIRMS collection version associated with the
+          detection records.
+        data_tests:
+          - not_null
+
+      - name: collection_version
+        data_type: string
+        description: >
+          Numeric FIRMS collection version extracted from the source version.
+        data_tests:
+          - not_null
+
+      - name: processing_type
+        data_type: string
+        description: >
+          FIRMS processing timeliness classification.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    'NEAR_REAL_TIME',
+                    'ULTRA_REAL_TIME',
+                    'REAL_TIME',
+                    'STANDARD',
+                    'UNKNOWN'
+                  ]
+
+      - name: fire_detection_count
+        data_type: integer
+        description: >
+          Number of fire detection events included in the aggregation.
+        data_tests:
+          - not_null
+
+      - name: high_confidence_count
+        data_type: integer
+        description: >
+          Number of fire detections classified as HIGH confidence.
+        data_tests:
+          - not_null
+
+      - name: total_fire_radiative_power
+        data_type: float64
+        description: >
+          Total Fire Radiative Power (FRP) from all fire detections
+          included in the aggregation.
+        data_tests:
+          - not_null
+
+      - name: avg_fire_radiative_power
+        data_type: float64
+        description: >
+          Average Fire Radiative Power (FRP) across all fire detections
+          included in the aggregation.
+        data_tests:
+          - not_null
+
+      - name: avg_brightness
+        data_type: float64
+        description: >
+          Average brightness value across all fire detections included
+          in the aggregation.
+        data_tests:
+          - not_null

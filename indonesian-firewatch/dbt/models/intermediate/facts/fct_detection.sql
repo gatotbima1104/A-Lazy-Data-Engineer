@@ -8,8 +8,7 @@
             'granularity': 'day'
         },
         cluster_by=[
-            'regency_id',
-            'satellite_id'
+            'regency_id'
         ]
     )
 }}
@@ -19,7 +18,11 @@ with detection as (
     from {{ ref('int_detection_join') }}
 
     {% if is_incremental() %}
-        where acquisition_date = cast('{{ var("fire_detection_date") }}' as date)
+        {% if var('fire_detection_date', none) %}
+
+            where acquisition_date = cast('{{ var("fire_detection_date") }}' as date)
+            
+        {% endif %}
     {% endif %}
 )
 
@@ -27,6 +30,8 @@ select
 
     -- Detection keys
     detection_id,
+
+    ingestion_source,
 
     -- FK Keys
     regency_id,
