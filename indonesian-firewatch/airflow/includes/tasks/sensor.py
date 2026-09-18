@@ -4,13 +4,11 @@ from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.sdk import get_current_context, task
 
 from includes.constant import GCP_CONN_ID, PREFIX
-from includes.notify import on_failure_callback
+from includes.tasks.notify import on_failure_callback
 from utils.constant import BUCKET_NAME
 
 
-@task(
-    on_failure_callback=on_failure_callback,
-)
+@task(on_failure_callback=on_failure_callback)
 def check_fire_detection_source() -> str:
     """[TASK] Check source file from GCS."""
 

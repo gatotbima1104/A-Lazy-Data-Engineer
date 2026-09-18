@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.sdk import dag
-from includes.notify import on_failure_callback
 from includes.tasks.bigquery import load_provinces, load_regencies
 from includes.tasks.native import enrich_and_load_location
 from includes.tasks.sensor import check_fire_detection_source
@@ -16,7 +15,6 @@ from dags.setup import FIRE_DETECTION_DATE, REFERENCE_GCS_SOURCES
     catchup=False,
     schedule='@daily',
     tags=["batching", "bigquery", "gcs", "dbt", "geojson"],
-    on_failure_callback=on_failure_callback,
     params={
         "date": FIRE_DETECTION_DATE
     }
@@ -43,15 +41,15 @@ def batch_fire_detections():
     trigger_transform = TriggerDagRunOperator(
         task_id="trigger_transform_fire_detections",
         trigger_dag_id="transform_fire_detections",
-        conf={
-            "trigger_source": "batch",
-            "fire_detection_date": "{{ params.get('date') or logical_date | ds }}",
-        },
+        # conf={
+        #     "trigger_source": "batch",
+        #     "fire_detection_date": "{{ params.get('date') or logical_date | ds }}",
+        # },
         wait_for_completion=False,
-        deferrable=True,
     )
     
-    [load_reg, load_prov, sensor_result] >> enrich_location
+    sensor_result >> [load_reg, load_prov]
+    [load_reg, load_prov] >> enrich_location
     enrich_location >> trigger_transform
 
 batch_fire_detections()

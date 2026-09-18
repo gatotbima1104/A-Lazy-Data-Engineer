@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import logging
 
 import requests
@@ -9,6 +10,8 @@ from includes.constant import TELEGRAM_API_URL
 from utils.constant import TELEGRAM_CHAT_ID
 
 logger = logging.getLogger(__name__)
+
+MAX_ERROR_LENGTH = 1000
 
 def send_telegram_message(text: str) -> None:
     try:
@@ -28,30 +31,33 @@ def send_telegram_message(text: str) -> None:
 
 
 def on_failure_callback(context: Context) -> None:
-    dag_id = context["dag"].dag_id
-    task_id = context["task_instance"].task_id
-    run_id = context["run_id"]
-    log_url = context["task_instance"].log_url
+    
+    dag = context["dag"]
+    task_instance = context["task_instance"]
     exception = context.get("exception")
-
-    text = (
-        f"🔥 <b>DAG failed</b>\n"
-        f"DAG: <code>{dag_id}</code>\n"
-        f"Task: <code>{task_id}</code>\n"
-        f"Run: <code>{run_id}</code>\n"
-        f"Error: {exception}\n"
-        f"<a href=\"{log_url}\">Logs</a>"
-    )
-    send_telegram_message(text)
-
-
-def on_success_callback(context: Context) -> None:
-    dag_id = context["dag"].dag_id
     run_id = context["run_id"]
+    
+    dag_id = dag.dag_id
+    task_id = task_instance.task_id
+
+    error_text = (
+        str(exception).strip()
+        if exception
+        else "No exception details available."
+    )
+
+    if len(error_text) > MAX_ERROR_LENGTH:
+        error_text = error_text[:MAX_ERROR_LENGTH] + "..."
+
+    error_text = html.escape(error_text)
 
     text = (
-        f"✅ <b>DAG succeeded</b>\n"
-        f"DAG: <code>{dag_id}</code>\n"
-        f"Run: <code>{run_id}</code>"
+        "🔥 <b>PIPELINE FAILED</b>\n\n"
+        f"<b>DAG:</b> <code>{html.escape(dag_id)}</code>\n"
+        f"<b>Run:</b> <code>{html.escape(run_id)}</code>\n"
+        f"<b>Task:</b> <code>{html.escape(task_id)}</code>\n\n"
+        f"<b>Error:</b>\n"
+        f"<code>{error_text}</code>\n\n"
     )
+
     send_telegram_message(text)

@@ -1,10 +1,10 @@
 import pandas as pd
-from airflow.exceptions import AirflowSkipException
-from airflow.sdk import get_current_context, task
+from airflow.sdk import task
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 
 from includes.tasks.bigquery import load_dataframe_to_bq
+from includes.tasks.notify import on_failure_callback
 from includes.tasks.setup import (
     BOUNDARY_DIR,
     BQ_TABLE_STREAMING_ENRICHED,
@@ -15,7 +15,7 @@ from scripts.enrich_location import FirmsLocationEnricher
 from utils.constant import BQ_DATASET_STREAMING, BUCKET_NAME, PROJECT_ID
 
 
-@task
+@task(on_failure_callback=on_failure_callback)
 def enrich_and_load_location(
     detection_source: str,
     regency_source: str
@@ -51,7 +51,7 @@ def enrich_and_load_location(
     
     return detection_source
 
-@task
+@task(on_failure_callback=on_failure_callback)
 def enrich_stream_location(
     regency_source: str,
 ) -> int:
@@ -60,57 +60,36 @@ def enrich_stream_location(
     and load them into the enriched streaming table.
     """
     
-    context = get_current_context()
-    dag_run = context["dag_run"]
-    
-    conf = dag_run.conf or {}
-    trigger_source = conf.get("trigger_source")
-    fire_detection_date = conf.get("fire_detection_date")
-    
-    # If transform DAG was triggered by batch,
-    # skip streaming enrichment but allow downstream tasks to continue.
-    if trigger_source == "batch":
-        print(f"Batch trigger detected for date {fire_detection_date}. Skipping streaming enrichment.")
-        return 0
-    
     client = bigquery.Client(project=PROJECT_ID)
-
-    raw_table = (
-        f"{PROJECT_ID}."
-        f"{BQ_DATASET_STREAMING}."
-        f"{BQ_TABLE_STREAMING_RAW}"
-    )
-
-    enriched_table = (
-        f"{PROJECT_ID}."
-        f"{BQ_DATASET_STREAMING}."
-        f"{BQ_TABLE_STREAMING_ENRICHED}"
-    )
+    
+    raw_table = (f"{PROJECT_ID}.{BQ_DATASET_STREAMING}.{BQ_TABLE_STREAMING_RAW}")
+    enriched_table = (f"{PROJECT_ID}.{BQ_DATASET_STREAMING}.{BQ_TABLE_STREAMING_ENRICHED}")
 
     print(f"Reading new streaming detections: {raw_table}")
 
     # Create enriched table if not exist
     try:
         client.get_table(enriched_table)
+        enriched_exists = True
         print(f"Enriched table already exists: {enriched_table}")
 
     except NotFound:
-        print(f"Creating enriched table: {enriched_table}")
-
+        enriched_exists = False
+        print(f"Enriched table does not exist yet: {enriched_table}")
+        
+    if not enriched_exists:
         raw_bq_table = client.get_table(raw_table)
         schema = list(raw_bq_table.schema)
 
-        # Extend column
-        schema.extend([
-            bigquery.SchemaField("regency_id", "INT64", mode="NULLABLE")
-        ])
+        # Append new col
+        schema.append(bigquery.SchemaField("regency_id", "INT64", mode="NULLABLE"))
 
         table = bigquery.Table(enriched_table, schema=schema)
-        
         client.create_table(table)
+        
         print(f"Created enriched table: {enriched_table}")
 
-        # First run: read all streaming detections
+        # Read all streaming detections 
         query = f"""
             SELECT *
             FROM `{raw_table}`
@@ -126,18 +105,23 @@ def enrich_stream_location(
             WHERE enriched.event_id IS NULL
         """
 
-    data = client.query(query, location="asia-southeast2").to_dataframe()
+    # Read new data
+    data = client.query(
+        query,
+        location="asia-southeast2"
+    ).to_dataframe()
 
     if data.empty:
         print("No new streaming detections to enrich.")
-        raise AirflowSkipException("No new streaming detections to enrich.")
+        return 0
 
+    # Enrich with new streaming data
     print(f"Loaded {len(data):,} new streaming detections")
 
-    # Read regency reference
+    # Read location reference
     regency_uri = f"gs://{BUCKET_NAME}/{regency_source}"
     print(f"Reading regency: {regency_uri}")
-
+    
     regency_data = pd.read_parquet(regency_uri)
     print(f"Loaded {len(regency_data):,} regency records")
 

@@ -9,7 +9,7 @@ from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.sdk import dag, task
 from includes.constant import GCP_CONN_ID, PG_CONN_ID
-from includes.notify import on_failure_callback
+from includes.tasks.notify import on_failure_callback
 
 from dags.setup import SOURCE_TABLES
 from utils.constant import BUCKET_NAME
@@ -22,12 +22,11 @@ logger = logging.getLogger(__name__)
     start_date=datetime(2025, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     schedule=None,
-    tags=["ingestion", "postgres", 'gcs'],
-    on_failure_callback=on_failure_callback
+    tags=["ingestion", "postgres", 'gcs']
 )
 def postgres_ingest_to_gsc():
     
-    @task
+    @task(on_failure_callback=on_failure_callback)
     def ingest_postgres_to_gcs() -> None:
         
         pg_hook = PostgresHook(

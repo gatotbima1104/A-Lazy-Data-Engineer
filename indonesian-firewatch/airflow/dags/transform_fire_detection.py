@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 
 from airflow.sdk import dag
-from includes.notify import on_failure_callback
 from includes.tasks.dbt import (
     build_intermediate,
     build_marts,
@@ -16,9 +15,8 @@ from dags.setup import REFERENCE_GCS_SOURCES
     dag_id="transform_fire_detections",
     start_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
     catchup=False,
-    schedule="*/5 * * * *",
-    tags=["streaming", "dbt", "transformation", "geojson"],
-    on_failure_callback=on_failure_callback,
+    schedule=None,
+    tags=["streaming", "dbt", "transformation", "geojson"]
 )
 def transform_fire_detections():
     

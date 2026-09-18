@@ -6,7 +6,7 @@ from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobO
 from google.cloud import bigquery
 
 from includes.constant import GCP_CONN_ID
-from includes.notify import on_failure_callback
+from includes.tasks.notify import on_failure_callback
 from utils.constant import (
     BQ_DATASET_RAW,
     BUCKET_NAME,
