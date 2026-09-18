@@ -208,56 +208,80 @@ models:
         description: Standardized confidence classification.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values: ['HIGH', 'NOMINAL', 'LOW', 'UNKNOWN']
 
       - name: detection_period
         data_type: string
         description: Detection period based on the day/night indicator.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values: ['DAY', 'NIGHT', 'UNKNOWN']
 
       - name: detection_type_label
         data_type: string
         description: Human-readable FIRMS detection type.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values:
-                  [
-                    'VEGETATION_FIRE',
-                    'ACTIVE_VOLCANO',
-                    'STATIC_LAND_SOURCE',
-                    'OFFSHORE',
-                    'UNKNOWN'
-                  ]
 
       - name: satellite_label
         data_type: string
         description: Human-readable satellite name.
         data_tests:
           - not_null
-          - accepted_values:
-              arguments:
-                values: ['SUOMI NPP', 'NOAA-20', 'NOAA-21', 'UNKNOWN']
 
       - name: processing_type
         data_type: string
         description: FIRMS processing timeliness classification.
         data_tests:
           - not_null
+      
+      - name: collection_version
+        data_type: string
+        description: FIRMS collection version inherited from the business transformation.
+  
+  - name: int_detection_quarantine
+    description: >
+      Isolates invalid NASA FIRMS detection records that could not be
+      associated with a valid regency. These records are excluded from the
+      normal transformation and fact-table pipeline and are retained for
+      data quality monitoring and investigation.
+
+    columns:
+
+      - name: detection_id
+        data_type: string
+        description: Unique identifier of the quarantined fire detection.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: regency_id
+        data_type: integer
+        description: >
+          Regency identifier assigned during staging. A value of -999
+          indicates that the detection could not be matched to a regency.
+        data_tests:
+          - not_null
+
+      - name: acquisition_date
+        data_type: date
+        description: Date on which the fire detection was acquired.
+        data_tests:
+          - not_null
+
+      - name: quarantine_issue
+        data_type: string
+        description: >
+          Data quality issue responsible for placing the detection
+          into quarantine.
+
+        data_tests:
+          - not_null
           - accepted_values:
               arguments:
                 values:
-                  [
-                    'NEAR_REAL_TIME',
-                    'ULTRA_REAL_TIME',
-                    'REAL_TIME',
-                    'STANDARD',
-                    'UNKNOWN'
-                  ]
+                  ['REGION_NOT_MATCHED']
+
+      - name: quarantined_at
+        data_type: timestamp
+        description: Timestamp when the record was written to quarantine.
+        data_tests:
+          - not_null

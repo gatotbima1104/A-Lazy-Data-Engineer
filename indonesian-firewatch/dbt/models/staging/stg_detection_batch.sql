@@ -42,8 +42,6 @@ with fire_detection as (
 
     from {{ source('detection', 'raw_detections') }}
 
-    where regency_id is not null
-
 )
 
 select * from fire_detection

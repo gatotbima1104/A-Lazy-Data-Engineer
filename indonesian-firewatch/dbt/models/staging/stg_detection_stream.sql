@@ -18,21 +18,18 @@ with fire_detection_stream as (
         coalesce(cast(confidence as string), 'UNKNOWN') as confidence,
 
         coalesce(cast(version as string), 'UNKNOWN') as version,
-
         coalesce(cast(brightness_temperature_t31 as numeric), -999) as brightness_temperature_t31,
-
         coalesce(cast(fire_radiative_power as numeric), -999) as fire_radiative_power,
-
+        
         coalesce(cast(daynight as string), 'UNKNOWN') as daynight,
 
         cast(null as numeric) as detection_type,
-        cast(regency_id as numeric) as regency_id,
+        coalesce(cast(regency_id as numeric), -999) as regency_id,
 
         'stream' as ingestion_source
 
     from {{ source('streaming', 'fire_detection_nrt_enriched') }}
-
-    where regency_id is not null
+    
 )
 
 select * from fire_detection_stream

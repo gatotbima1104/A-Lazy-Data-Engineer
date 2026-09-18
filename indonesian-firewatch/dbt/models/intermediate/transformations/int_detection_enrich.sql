@@ -1,7 +1,7 @@
 with detection as (
 
-    select * 
-    from {{ ref('stg_detection') }}
+    select * from {{ ref('stg_detection') }}
+    where regency_id != -999
 
 ),
 
