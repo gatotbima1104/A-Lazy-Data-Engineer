@@ -31,7 +31,8 @@ classification as (
     select
         classification_id,
         confidence_level_label,
-        daynight
+        daynight,
+        detection_type_label
     from {{ ref('dim_detection_classification') }}
 
 ),
@@ -47,6 +48,8 @@ location as (
     from {{ ref('dim_location') }}
 
 )
+
+
 
 select
 
@@ -68,6 +71,14 @@ select
         else 'Unknown'
     end as day_night,
 
+    case c.detection_type_label
+        when 'VEGETATION_FIRE' then 'Vegetation Fire'
+        when 'ACTIVE_VOLCANO' then 'Active Volcano'
+        when 'STATIC_LAND_SOURCE' then 'Static Land Source'
+        when 'OFFSHORE' then 'Offshore'
+        else 'Unknown'
+    end as detection_type_label,
+
     f.ingestion_source,
 
     -- Measures: hanya simpan yang bisa di-SUM atau di-MAX
@@ -85,4 +96,4 @@ left join classification c
 left join location l
     on f.regency_id = l.regency_id
 
-group by 1, 2, 3, 4, 5, 6
+group by 1, 2, 3, 4, 5, 6, 7
