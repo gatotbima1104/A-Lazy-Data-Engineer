@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import logging
 from datetime import datetime, timezone
 
@@ -9,6 +8,7 @@ from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.sdk import dag, task
 from includes.constant import GCP_CONN_ID, PG_CONN_ID
+from includes.tasks.gcs import upload_pq_gcs
 from includes.tasks.notify import on_failure_callback
 
 from dags.setup import SOURCE_TABLES
@@ -49,70 +49,29 @@ def postgres_ingest_to_gsc():
 
                 # References logic
                 if source_type == "reference":
-                    pq_buffer = io.BytesIO()
-
-                    df.to_parquet(
-                        pq_buffer,
-                        index=False,
-                        engine="pyarrow",
-                    )
-
-                    pq_buffer.seek(0)
+                    destination = (f"reference/{table_name}.parquet")
                     
-                    destination = (
-                        f"reference/"
-                        f"{table_name}.parquet"
-                    )
-
-                    gcs_hook.upload(
-                        bucket_name=BUCKET_NAME,
-                        object_name=destination,
-                        data=pq_buffer.getvalue(),
-                        mime_type="application/octet-stream",
-                    )
-
+                    upload_pq_gcs(df, object_name=destination, gcs_hook=gcs_hook)
+                    
                     logger.info("Wrote %d rows -> gs://%s/%s", len(df), BUCKET_NAME, destination)
                     continue
 
                 # Archive/nrt logic
-                # Partition prepare file spare
-                df["acq_date"] = pd.to_datetime(
-                    df["acq_date"],
-                    errors="coerce",
-                )
+                df["acq_date"] = pd.to_datetime(df["acq_date"], errors="coerce") # Partition prepare file spare
 
-                for acq_date, day_df in df.groupby(
-                    df["acq_date"].dt.date
-                ):
-
+                for acq_date, day_df in df.groupby(df["acq_date"].dt.date):
+                    
                     date_str = acq_date.strftime("%Y-%m-%d")
                     year = acq_date.strftime("%Y")
                     month = acq_date.strftime("%m")
-
-                    pq_buffer = io.BytesIO()
-
-                    day_df.to_parquet(
-                        pq_buffer,
-                        index=False,
-                        engine="pyarrow",
-                    )
-
-                    pq_buffer.seek(0)
-
+                    
                     destination = (
-                        f"{source_type}/"
-                        f"{year}/"
-                        f"{month}/"
-                        f"{table_name}_{date_str}.parquet"
+                        f"{source_type}/{year}/"
+                        f"{month}/{table_name}_{date_str}.parquet"
                     )
 
-                    gcs_hook.upload(
-                        bucket_name=BUCKET_NAME,
-                        object_name=destination,
-                        data=pq_buffer.getvalue(),
-                        mime_type="application/octet-stream",
-                    )
-    
+                    upload_pq_gcs(day_df, object_name=destination, gcs_hook=gcs_hook)
+
     ingest_postgres_to_gcs()
         
 postgres_ingest_to_gsc()
