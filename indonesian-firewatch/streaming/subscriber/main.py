@@ -100,7 +100,7 @@ def run():
                     create_disposition=(beam.io.BigQueryDisposition.CREATE_IF_NEEDED),
                     method=WriteToBigQuery.Method.STREAMING_INSERTS,
                     insert_retry_strategy="RETRY_ON_TRANSIENT_ERROR",
-                    batch_size=100
+                    batch_size=1000
                 )
             )
             
