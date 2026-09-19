@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 @dag(
     dag_id="postgres_ingest_to_gsc",
-    start_date=datetime(2025, 1, 1, tzinfo=timezone.utc),
+    start_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     schedule=None,
     tags=["ingestion", "postgres", 'gcs']
@@ -29,18 +29,11 @@ def postgres_ingest_to_gsc():
     @task(on_failure_callback=on_failure_callback)
     def ingest_postgres_to_gcs() -> None:
         
-        pg_hook = PostgresHook(
-            postgres_conn_id=PG_CONN_ID
-        )
-        
-        gcs_hook = GCSHook(
-            gcp_conn_id=GCP_CONN_ID
-        )
+        pg_hook = PostgresHook(postgres_conn_id=PG_CONN_ID)
+        gcs_hook = GCSHook(gcp_conn_id=GCP_CONN_ID)
         
         for source_type, table_names in SOURCE_TABLES.items():
-        
             for table_name in table_names:
-                
                 logger.info("Reading PostgreSQL table: %s", table_name)
                 
                 df = pg_hook.get_pandas_df(
@@ -56,7 +49,6 @@ def postgres_ingest_to_gsc():
 
                 # References logic
                 if source_type == "reference":
-
                     pq_buffer = io.BytesIO()
 
                     df.to_parquet(
@@ -66,7 +58,7 @@ def postgres_ingest_to_gsc():
                     )
 
                     pq_buffer.seek(0)
-
+                    
                     destination = (
                         f"reference/"
                         f"{table_name}.parquet"

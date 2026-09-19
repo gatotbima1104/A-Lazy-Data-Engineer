@@ -1,9 +1,5 @@
-# from airflow.dags.utils.dbt_doc_hash import DbtDocsHash
 from airflow.providers.standard.operators.bash import BashOperator
 
-# from airflow.providers.standard.operators.empty import EmptyOperator
-# from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
-# from airflow.sdk import TaskGroup
 from includes.tasks.setup import DBT_PROJECT_DIR
 
 

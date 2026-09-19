@@ -42,7 +42,7 @@ def batch_fire_detections():
         task_id="trigger_transform_fire_detections",
         trigger_dag_id="transform_fire_detections",
         # conf={
-        #     "trigger_source": "batch",
+        #     # "trigger_source": "batch",
         #     "fire_detection_date": "{{ params.get('date') or logical_date | ds }}",
         # },
         wait_for_completion=False,

@@ -244,25 +244,35 @@ services:
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
 
-  # dbt-docs:
-  #   <<: *airflow-common
-  #   entrypoint: bash
-  #   working_dir: /opt/airflow/project/dbt_gcp
+  dbt-docs:
+    <<: *airflow-common
+    entrypoint: bash
+    working_dir: /opt/airflow/project/dbt
 
-  #   command:
-  #     - -c
-  #     - |
-  #       dbt docs serve \
-  #         --host 0.0.0.0 \
-  #         --port 8081 \
-  #         --no-browser
+    command:
+      - -c
+      - |
+        echo "Waiting for dbt documentation..."
 
-  #   ports:
-  #     - "8081:8081"
+        while [ ! -f target/manifest.json ] || [ ! -f target/catalog.json ]; do
+          echo "Documentation not generated yet. Waiting..."
+          sleep 10
+        done
 
-  #   restart: unless-stopped
-  #   labels:
-  #     - dev.orbstack.domains=indonesian-firewatch.dbt-docs.local
+        echo "Documentation found. Starting dbt docs server..."
+
+        exec dbt docs serve \
+          --host 0.0.0.0 \
+          --port 8081 \
+          --no-browser
+
+    ports:
+      - "8081:8081"
+
+    restart: unless-stopped
+
+    labels:
+      - dev.orbstack.domains=indonesian-firewatch.dbt-docs.local
     
 volumes:
   postgres-db-volume:

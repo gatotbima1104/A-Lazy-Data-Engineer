@@ -29,3 +29,4 @@ dbt_packages/
 logs/
 .env
 .csv
+*.hash
