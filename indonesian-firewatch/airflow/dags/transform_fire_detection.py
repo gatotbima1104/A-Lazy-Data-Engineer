@@ -7,10 +7,8 @@ from includes.tasks.dbt import (
     build_marts,
     build_staging,
 )
-from includes.tasks.native import enrich_stream_location
 from includes.tasks.quality_check import create_quality_group
 
-from dags.setup import REFERENCE_GCS_SOURCES
 from utils.constant import BQ_DATASET_INTERMEDIATE, BQ_DATASET_MART, BQ_DATASET_STAGING
 
 
@@ -23,14 +21,6 @@ from utils.constant import BQ_DATASET_INTERMEDIATE, BQ_DATASET_MART, BQ_DATASET_
 )
 def transform_fire_detections():
     
-    regency = REFERENCE_GCS_SOURCES["regency"]
-
-    # Enrich new streaming detections
-    stream_location = enrich_stream_location(
-        regency_source=regency
-    )
-
-    # dbt
     staging = build_staging()
     qa_stg = create_quality_group(
         group_id="quality_check_stg",
@@ -70,7 +60,6 @@ def transform_fire_detections():
     )
     
     # DAG Flows
-    stream_location >> staging
     staging >> qa_stg >> intermediate
     intermediate >> qa_int >> marts
     marts >> qa_mart >> trigger_docs
