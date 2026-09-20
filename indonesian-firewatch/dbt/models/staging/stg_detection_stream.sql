@@ -30,6 +30,20 @@ with fire_detection_stream as (
 
     from {{ source('streaming', 'fire_detection_nrt_enriched') }}
     
+),
+
+deduplicated as (
+
+    select *
+
+    from fire_detection_stream
+
+    qualify row_number() over (
+        partition by detection_id
+        order by acquisition_date desc, acquisition_time desc
+    ) = 1
+
 )
 
-select * from fire_detection_stream
+select *
+from deduplicated
