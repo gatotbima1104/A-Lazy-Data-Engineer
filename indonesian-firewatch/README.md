@@ -190,7 +190,17 @@ TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
 ```
 
-### 2. Start Services
+### 2. Download Reference Data (Boundary GeoJSON)
+ 
+Province boundary GeoJSON files (with district-level detail) are not committed to this repository — they're large (tens of MB per province) and derived from third-party geospatial data. Download them before running the pipeline:
+ 
+```bash
+python scripts/download_boundaries.py
+```
+ 
+This fetches all province GeoJSON files from [dmxsan/indonesia-admin-boundaries](https://github.com/dmxsan/indonesia-admin-boundaries) (original source: [Badan Informasi Geospasial](https://geoportal.big.go.id/)) and saves them to `data/geojsons/with-districts/`, used by the location enrichment step in both the batch and streaming paths.
+
+### 3. Start Services
 
 ```bash
 docker compose up -d airflow-init   # one-time Airflow metadata DB init
@@ -204,7 +214,7 @@ docker compose up -d                # start all services (Postgres, Airflow, dbt
 | Airflow | `localhost:8080` | `https://indonesian-firewatch.airflow.local/` |
 | dbt Docs | `localhost:8081` | `http://indonesian-firewatch.dbt-docs.local/` |
 
-### 3. Run the Batch Pipeline
+### 4. Run the Batch Pipeline
 
 1. In the Airflow UI, add a connection named **`google_cloud_default`** with your GCP credentials (uses the ADC set up in Prerequisites).
 2. Trigger the **`ingest_local_pg_to_gcs`** DAG.
@@ -213,7 +223,7 @@ docker compose up -d                # start all services (Postgres, Airflow, dbt
 
 DAG dependency: a successful batch run automatically triggers the **dbt transform DAG**, which runs the staging → intermediate → marts models and regenerates the dbt docs site.
 
-### 4. Run the Streaming Pipeline
+### 5. Run the Streaming Pipeline
 
 **Publisher** — replays historical FIRMS records into Pub/Sub at a configurable interval, simulating a live feed:
 

@@ -30,3 +30,5 @@ logs/
 .env
 .csv
 *.hash
+
+data/geojsons/with-districts/*.geojson
