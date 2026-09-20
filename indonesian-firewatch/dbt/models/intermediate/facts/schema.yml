@@ -1,0 +1,137 @@
+version: 2
+
+models:
+
+  - name: fct_detection
+    description: >
+      Event-level fact table containing individual NASA FIRMS fire detection
+      records. Each row represents one fire detection event and contains
+      references to location, satellite, detection classification, and
+      collection process dimensions, together with fire measurement and
+      acquisition time attributes.
+
+    columns:
+      - name: detection_id
+        data_type: string
+        description: >
+          Unique identifier of the fire detection event. The grain of this
+          fact table is one row per detection_id.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: ingestion_source
+        data_type: string
+        description: >
+          Source ingestion path of the detection, identifying whether the
+          record originated from batch or streaming ingestion.
+        data_tests:
+          - not_null
+
+      - name: regency_id
+        data_type: integer
+        description: >
+          Foreign key identifying the regency where the fire detection
+          occurred.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_location')
+                field: regency_id
+
+      - name: satellite_id
+        data_type: string
+        description: >
+          Foreign key identifying the satellite and instrument used to
+          produce the fire detection.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_satellite')
+                field: satellite_id
+
+      - name: classification_id
+        data_type: string
+        description: >
+          Foreign key identifying the detection classification, including
+          confidence level, detection period, and detection type.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_detection_classification')
+                field: classification_id
+
+      - name: processing_id
+        data_type: string
+        description: >
+          Foreign key identifying the FIRMS collection version and processing
+          type associated with the detection.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_collecting_process')
+                field: processing_id
+
+      - name: brightness
+        data_type: float64
+        description: >
+          Brightness value of the detected fire pixel.
+
+      - name: scan
+        data_type: float64
+        description: >
+          Scan dimension of the detected fire pixel.
+
+      - name: track
+        data_type: float64
+        description: >
+          Track dimension of the detected fire pixel.
+
+      - name: confidence
+        data_type: string
+        description: >
+          Original NASA FIRMS confidence value associated with the detection.
+
+      - name: brightness_temperature_t31
+        data_type: float64
+        description: >
+          Brightness temperature measured using the T31 thermal band.
+
+      - name: fire_radiative_power
+        data_type: float64
+        description: >
+          Fire Radiative Power (FRP) associated with the detection,
+          representing the estimated radiant heat output of the detected fire.
+
+      - name: acquisition_date
+        data_type: date
+        description: >
+          Date when the satellite acquired the fire detection.
+        data_tests:
+          - not_null
+
+      - name: acquisition_time
+        data_type: time
+        description: >
+          Time when the satellite acquired the fire detection.
+        data_tests:
+          - not_null
+
+      - name: detection_datetime
+        data_type: datetime
+        description: >
+          Combined acquisition date and acquisition time represented as
+          a BigQuery DATETIME.
+        data_tests:
+          - not_null
+
+      - name: detection_timestamp
+        data_type: timestamp
+        description: >
+          Detection date and time represented as a BigQuery TIMESTAMP.
+        data_tests:
+          - not_null

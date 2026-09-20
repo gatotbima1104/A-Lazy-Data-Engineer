@@ -1,0 +1,287 @@
+version: 2
+
+models:
+
+  - name: int_detection_business
+    description: >
+      Applies business-level transformations to NASA FIRMS detection records,
+      converting source codes into standardized business classifications.
+
+    columns:
+
+      - name: detection_id
+        data_type: string
+        description: Unique identifier of the fire detection.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: confidence_level_label
+        data_type: string
+        description: Standardized confidence classification.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['HIGH', 'NOMINAL', 'LOW', 'UNKNOWN']
+
+      - name: detection_period
+        data_type: string
+        description: Detection period based on the day/night indicator.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['DAY', 'NIGHT', 'UNKNOWN']
+
+      - name: detection_type_label
+        data_type: string
+        description: Human-readable FIRMS detection type.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    'VEGETATION_FIRE',
+                    'ACTIVE_VOLCANO',
+                    'STATIC_LAND_SOURCE',
+                    'OFFSHORE',
+                    'UNKNOWN'
+                  ]
+
+      - name: satellite_label
+        data_type: string
+        description: Human-readable satellite name.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['SUOMI NPP', 'NOAA-20', 'NOAA-21', 'UNKNOWN']
+
+      - name: collection_version
+        data_type: string
+        description: Numeric FIRMS collection version extracted from version.
+
+      - name: processing_type
+        data_type: string
+        description: FIRMS processing timeliness classification.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    'NEAR_REAL_TIME',
+                    'ULTRA_REAL_TIME',
+                    'REAL_TIME',
+                    'STANDARD',
+                    'UNKNOWN'
+                  ]
+
+  - name: int_detection_enrich
+    description: >
+      Enriches NASA FIRMS detection records with derived temporal attributes.
+
+    columns:
+
+      - name: detection_id
+        data_type: string
+        description: Unique identifier of the fire detection.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: detection_datetime
+        data_type: datetime
+        description: Detection date and time as DATETIME.
+        data_tests:
+          - not_null
+
+      - name: detection_timestamp
+        data_type: timestamp
+        description: Detection date and time as UTC TIMESTAMP.
+        data_tests:
+          - not_null
+
+      - name: detection_year
+        data_type: integer
+        description: Calendar year of the detection.
+        data_tests:
+          - not_null
+
+      - name: detection_month
+        data_type: integer
+        description: Calendar month of the detection.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                quote: false
+
+      - name: detection_month_name
+        data_type: string
+        description: Human-readable calendar month name.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    'JANUARY',
+                    'FEBRUARY',
+                    'MARCH',
+                    'APRIL',
+                    'MAY',
+                    'JUNE',
+                    'JULY',
+                    'AUGUST',
+                    'SEPTEMBER',
+                    'OCTOBER',
+                    'NOVEMBER',
+                    'DECEMBER',
+                    'UNKNOWN'
+                  ]
+
+      - name: detection_day_of_week
+        data_type: integer
+        description: Numeric day of week where Sunday is 1 and Saturday is 7.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7]
+                quote: false
+
+      - name: detection_day_name
+        data_type: string
+        description: Human-readable day of the week.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    'SUNDAY',
+                    'MONDAY',
+                    'TUESDAY',
+                    'WEDNESDAY',
+                    'THURSDAY',
+                    'FRIDAY',
+                    'SATURDAY',
+                    'UNKNOWN'
+                  ]
+
+      - name: detection_hour
+        data_type: integer
+        description: Hour of the detection ranging from 0 to 23.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    0, 1, 2, 3, 4, 5, 6, 7,
+                    8, 9, 10, 11, 12, 13, 14, 15,
+                    16, 17, 18, 19, 20, 21, 22, 23
+                  ]
+                quote: false
+
+  - name: int_detection_join
+    description: >
+      Combines the enriched detection attributes with standardized business
+      classifications to provide the canonical event-level detection model
+      used by downstream marts.
+
+    columns:
+
+      - name: detection_id
+        data_type: string
+        description: Unique identifier of the fire detection.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: confidence_level_label
+        data_type: string
+        description: Standardized confidence classification.
+        data_tests:
+          - not_null
+
+      - name: detection_period
+        data_type: string
+        description: Detection period based on the day/night indicator.
+        data_tests:
+          - not_null
+
+      - name: detection_type_label
+        data_type: string
+        description: Human-readable FIRMS detection type.
+        data_tests:
+          - not_null
+
+      - name: satellite_label
+        data_type: string
+        description: Human-readable satellite name.
+        data_tests:
+          - not_null
+
+      - name: processing_type
+        data_type: string
+        description: FIRMS processing timeliness classification.
+        data_tests:
+          - not_null
+      
+      - name: collection_version
+        data_type: string
+        description: FIRMS collection version inherited from the business transformation.
+  
+  - name: int_detection_quarantine
+    description: >
+      Isolates invalid NASA FIRMS detection records that could not be
+      associated with a valid regency. These records are excluded from the
+      normal transformation and fact-table pipeline and are retained for
+      data quality monitoring and investigation.
+
+    columns:
+
+      - name: detection_id
+        data_type: string
+        description: Unique identifier of the quarantined fire detection.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: regency_id
+        data_type: integer
+        description: >
+          Regency identifier assigned during staging. A value of -999
+          indicates that the detection could not be matched to a regency.
+        data_tests:
+          - not_null
+
+      - name: acquisition_date
+        data_type: date
+        description: Date on which the fire detection was acquired.
+        data_tests:
+          - not_null
+
+      - name: quarantine_issue
+        data_type: string
+        description: >
+          Data quality issue responsible for placing the detection
+          into quarantine.
+
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  ['REGION_NOT_MATCHED']
+
+      - name: quarantined_at
+        data_type: timestamp
+        description: Timestamp when the record was written to quarantine.
+        data_tests:
+          - not_null

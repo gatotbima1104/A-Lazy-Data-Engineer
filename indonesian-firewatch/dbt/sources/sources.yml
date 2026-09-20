@@ -1,0 +1,24 @@
+sources:
+
+  - name: detection
+    description: Raw Fire Detection.
+    database: "{{ env_var('PROJECT_ID') }}"
+    dataset: "{{ env_var('BQ_DATASET_RAW') }}"
+    tables:
+      - name: raw_detections
+        description: Raw Fire Detection.
+      - name: raw_provinces
+        description: Raw Provinces.
+      - name: raw_regencies
+        description: Raw Regencies.
+
+  - name: streaming
+    database: "{{ env_var('PROJECT_ID') }}"
+    dataset: "{{ env_var('BQ_DATASET_STREAMING') }}"
+
+    tables:
+      - name: fire_detection_nrt_raw
+        description: Raw Near Real-Time Fire Detection events from Pub/Sub.
+
+      - name: fire_detection_nrt_enriched
+        description: Enriched Near Real-Time Fire Detection events with administrative location.

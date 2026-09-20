@@ -4,3 +4,5 @@ dbt-bigquery
 requests
 pandas
 google-cloud-bigquery
+geopandas
+fastavro

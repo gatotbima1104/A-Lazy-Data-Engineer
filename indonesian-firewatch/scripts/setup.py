@@ -1,0 +1,5 @@
+STANDARD_GEOGRAPHIC_COORDINATE_SYSTEM = "EPSG:4326" # coordinate reference system which uses latitude/longitude ex. FIRMS
+
+REGENCY_ALIASES = {
+    "KEPSIAUTAGULANDANGBIARO": "SIAUTAGULANDANGBIARO",
+}

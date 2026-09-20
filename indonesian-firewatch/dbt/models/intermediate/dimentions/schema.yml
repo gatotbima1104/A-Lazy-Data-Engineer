@@ -1,0 +1,209 @@
+version: 2
+
+models:
+
+  - name: dim_collecting_process
+    description: >
+      Dimension containing unique NASA FIRMS data collection and processing
+      configurations. Each record represents a distinct combination of
+      collection version and processing type.
+
+    columns:
+
+      - name: processing_id
+        data_type: string
+        description: >
+          Surrogate key identifying a unique FIRMS collection and processing
+          configuration.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: version
+        data_type: string
+        description: >
+          Original NASA FIRMS collection version, including processing
+          suffixes such as NRT, URT, or RT.
+        data_tests:
+          - not_null
+
+      - name: collection_version
+        data_type: string
+        description: >
+          Numeric FIRMS collection version extracted from the source version.
+        data_tests:
+          - not_null
+
+      - name: processing_type
+        data_type: string
+        description: >
+          Classification of the FIRMS processing timeliness.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    'NEAR_REAL_TIME',
+                    'ULTRA_REAL_TIME',
+                    'REAL_TIME',
+                    'STANDARD',
+                    'UNKNOWN'
+                  ]
+
+  - name: dim_detection_classification
+    description: >
+      Dimension containing unique combinations of fire detection
+      classifications, including confidence level, detection period,
+      and detection type.
+
+    columns:
+
+      - name: classification_id
+        data_type: string
+        description: >
+          Surrogate key identifying a unique detection classification.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: confidence_level_label
+        data_type: string
+        description: >
+          Standardized confidence classification of the fire detection.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['HIGH', 'NOMINAL', 'LOW', 'UNKNOWN']
+
+      - name: daynight
+        data_type: string
+        description: >
+          Original NASA FIRMS day/night indicator.
+          D represents day and N represents night.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['D', 'N']
+
+      - name: detection_period
+        data_type: string
+        description: >
+          Standardized period of the day when the detection occurred.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['DAY', 'NIGHT', 'UNKNOWN']
+
+      - name: detection_type
+        data_type: integer
+        description: >
+          Original NASA FIRMS numeric detection type code.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3]
+                quote: false
+
+      - name: detection_type_label
+        data_type: string
+        description: >
+          Human-readable classification of the FIRMS detection type.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    'VEGETATION_FIRE',
+                    'ACTIVE_VOLCANO',
+                    'STATIC_LAND_SOURCE',
+                    'OFFSHORE',
+                    'UNKNOWN'
+                  ]
+
+  - name: dim_location
+    description: >
+      Geographic dimension containing Indonesian regency and province
+      administrative information. Each record represents a regency and its
+      associated province.
+
+    columns:
+
+      - name: regency_id
+        data_type: integer
+        description: >
+          Unique identifier of the regency.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: regency_name
+        data_type: string
+        description: >
+          Name of the regency.
+        data_tests:
+          - not_null
+
+      - name: province_id
+        data_type: integer
+        description: >
+          Identifier of the province containing the regency.
+        data_tests:
+          - not_null
+
+      - name: province_name
+        data_type: string
+        description: >
+          Name of the province containing the regency.
+        data_tests:
+          - not_null
+
+  - name: dim_satellite
+    description: >
+      Dimension containing unique NASA FIRMS satellite and instrument
+      combinations used to produce fire detection observations.
+
+    columns:
+
+      - name: satellite_id
+        data_type: string
+        description: >
+          Surrogate key identifying a unique satellite and instrument
+          combination.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: satellite
+        data_type: string
+        description: >
+          Original NASA FIRMS satellite identifier.
+        data_tests:
+          - not_null
+
+      - name: satellite_label
+        data_type: string
+        description: >
+          Human-readable satellite name.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  [
+                    'SUOMI NPP',
+                    'NOAA-20',
+                    'NOAA-21',
+                    'UNKNOWN'
+                  ]
+
+      - name: instrument
+        data_type: string
+        description: >
+          Satellite instrument used to produce the fire detection.
+        data_tests:
+          - not_null
