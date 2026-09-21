@@ -19,7 +19,7 @@ from dags.setup import FIRE_DETECTION_DATE, REFERENCE_GCS_SOURCES
     dag_id="batch_fire_detections",
     start_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
     catchup=False,
-    schedule='@daily',
+    schedule="0 1 * * *",
     tags=["batching", "bigquery", "gcs", "dbt", "geojson"],
     params={
         "date": FIRE_DETECTION_DATE
