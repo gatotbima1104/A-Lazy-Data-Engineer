@@ -46,32 +46,31 @@ Orchestrated end-to-end by **Apache Airflow** (DAGs for ingestion and scheduled 
 ![Architecture Diagram](docs/architecture.png)
 
 ```
-[DAG] Postgres Ingest to GCS (PostgreSQL ──▶ GCS (Data Lake))
-                            │
-                ┌───────────┴───────────┐
-                ▼                       ▼
-            BATCHING                STREAMING
-                │                       │
-                ▼                       ▼
-        GCS ──▶ Enrich Location     Publisher ──▶ Pub/Sub ──▶ Subscriber ──▶ Apache Beam
-        Batch GeoJSON ──▶ BigQuery   (Transformation) ──▶ BigQuery ──▶ Enrich Location
-                                                                Stream GeoJSON ──▶ BigQuery
-                │                       │
-                └───────────┬───────────┘
-                            ▼
-            [DAG] dbt Transformations
-            Staging ──▶ Intermediate ──▶ Marts
-                            │
-                    Data Quality check
-                            │
-                 ┌──────────┴──────────┐
-                 ▼                     ▼
-             Quarantine             Curated
-             (BigQuery)            (BigQuery)
-                                        │
-                                        ▼
-                                    Data Studio
-                                    (Analytics)
+        [DAG] Postgres Ingest to GCS                  [DAG] Ingest from REST API
+        PostgreSQL ──▶ GCS (Data Lake)                        │
+                    │                                         │
+                BATCHING                                  STREAMING
+                    │                                         │
+                    ▼                                         ▼
+        GCS ──▶ Enrich Location                Publisher ──▶ Pub/Sub ──▶ Subscriber ──▶ Apache Beam
+        Batch GeoJSON ──▶ BigQuery              (Transformation) ──▶ BigQuery ──▶ Enrich Location
+                                                                      Stream GeoJSON ──▶ BigQuery
+                     │                                        │
+                     └───────────────────┬────────────────────┘
+                                         ▼
+                        [DAG] dbt Transformations
+                        Staging ──▶ Intermediate ──▶ Marts
+                                         │
+                                Data Quality check
+                                         │
+                            ┌────────────┴────────────┐
+                            ▼                          ▼
+                        Quarantine                  Curated
+                       (BigQuery)                  (BigQuery)
+                                                          │
+                                                          ▼
+                                                      Data Studio
+                                                      (Analytics)
 ```
 
 **Flow explanation:**
@@ -228,18 +227,15 @@ DAG dependency: a successful batch run automatically triggers the **dbt transfor
 **Publisher** — replays historical FIRMS records into Pub/Sub at a configurable interval, simulating a live feed:
 
 ```bash
-# replay a single date, one record per second
+# get data with a single date, one record per interval (You can change the satellite and area of world referring to their FIRMS website)
 python -m streaming.publisher.main \
-  --date YYYY-MM-DD \
-  --interval 1
-
-# replay a date range at high speed, without publishing (dry run)
-python -m streaming.publisher.main \
-  --start-date YYYY-MM-DD \
-  --end-date YYYY-MM-DD \
-  --interval 0.1 \
-  --dry-run
-```
+    --date YYYY-MM-DD \
+    --key `GET_FROM_NASA_API_MAP` \
+    --satellite VIIRS_SNPP_NRT \
+    --area "95,-11,141,6" \
+    --interval 1 \
+    --day-range 1 \
+    --dry-run
 
 `--dry-run` prints each record to stdout instead of publishing it to Pub/Sub — useful for validating the replay logic before sending real messages.
 

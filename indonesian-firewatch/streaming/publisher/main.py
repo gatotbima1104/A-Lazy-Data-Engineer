@@ -1,7 +1,7 @@
 import argparse
 from datetime import date, datetime
 
-from streaming.publisher.replay_publisher import ReplayPublisher
+from streaming.publisher.firms_publisher import FirmsPublisher
 
 
 def parse_date(
@@ -14,72 +14,71 @@ def main() -> None:
         description="Replay FIRMS NRT Parquet data from GCS to Pub/Sub."
     )
     
-    date_group = (
-        parser.add_mutually_exclusive_group()
-    )
-    
-    date_group.add_argument(
+    parser.add_argument(
         "--date",
-        help=("Single replay date in YYYY-MM-DD format.")
-    )
-    
-    date_group.add_argument(
-        "--start-date",
-        help=("Start replay date in YYYY-MM-DD format.")
+        required=True,
+        help="FIRMS date in YYYY-MM-DD format."
     )
 
     parser.add_argument(
-        "--end-date",
-        help=("End replay date in YYYY-MM-DD format.")
+        "--key",
+        required=True,
+        help="FIRMS API MAP_KEY."
+    )
+
+    parser.add_argument(
+        "--satellite",
+        required=True,
+        help="FIRMS source, e.g. MODIS_NRT or VIIRS_NOAA20_NRT."
+    )
+
+    parser.add_argument(
+        "--area",
+        required=True,
+        help="FIRMS area in west,south,east,north format."
+    )
+
+    parser.add_argument(
+        "--day-range",
+        type=int,
+        default=1,
+        help="FIRMS API day range. Default is 1."
     )
 
     parser.add_argument(
         "--interval",
         type=float,
         default=10,
-        help=("Delay in seconds between published detections. Default in 10s/Event"),
+        help="Delay in seconds between published detections. Default is 10s/event."
     )
-    
+
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Publish events to Pub/Sub when enabled.",
+        help="Do not publish events to Pub/Sub."
     )
     
     args = parser.parse_args()
     
     # Exceptions handling
-    if args.date and args.end_date:
-        parser.error("--end-date cannot be used with --date.")
-    
-    if args.end_date and not args.start_date:
-        parser.error("--start-date is required when --end-date is provided.")
-        
-    if args.start_date and not args.end_date:
-            parser.error("--end-date is required when --start-date is provided.")
+    if not args.date:
+        parser.error("--date is required")
 
-    if not args.date and not args.start_date:
-        parser.error("Provide either --date or --start-date and --end-date.")
+    if args.day_range < 1 or args.day_range > 5:
+        parser.error("--day-range must be between 1 and 5.")
 
     if args.interval < 0:
         parser.error("--interval must be greater than or equal to 0.")
-        
-    # Args logic
-    if args.date:
-        start_date = parse_date(args.date)
-        end_date = start_date
     
-    else:
-        start_date = parse_date(args.start_date)
-        end_date = parse_date(args.end_date)
+    publisher = FirmsPublisher(
+        map_key=args.key,
+        day_range=args.day_range,
+        satellite=args.satellite,
+        area=args.area,
+    )
     
-    if end_date < start_date:
-        parser.error("--end-date must be greater than or equal to --start-date.")
-    
-    publisher = ReplayPublisher()
     publisher.replay(
-        start_date=start_date,
-        end_date=end_date,
+        date=parse_date(args.date),
         interval=args.interval,
         dry_run=args.dry_run
     )
