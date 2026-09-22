@@ -8,11 +8,10 @@ from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.sdk import dag, task
 from includes.constant import GCP_CONN_ID, PG_CONN_ID
-from includes.tasks.gcs import upload_pq_gcs
+from includes.tasks.gcs import ingest_pg_to_gcs
 from includes.tasks.notify import on_failure_callback
 
 from dags.setup import SOURCE_TABLES
-from utils.constant import BUCKET_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -27,51 +26,20 @@ logger = logging.getLogger(__name__)
 def postgres_ingest_to_gsc():
     
     @task(on_failure_callback=on_failure_callback)
-    def ingest_postgres_to_gcs() -> None:
+    def ingest() -> None:
         
         pg_hook = PostgresHook(postgres_conn_id=PG_CONN_ID)
         gcs_hook = GCSHook(gcp_conn_id=GCP_CONN_ID)
-        
+
         for source_type, table_names in SOURCE_TABLES.items():
             for table_name in table_names:
-                logger.info("Reading PostgreSQL table: %s", table_name)
-                
-                df = pg_hook.get_pandas_df(
-                    f"""
-                        SELECT *
-                        FROM {table_name}
-                    """
+                ingest_pg_to_gcs(
+                    pg_hook=pg_hook,
+                    gcs_hook=gcs_hook,
+                    source_type=source_type,
+                    table_name=table_name,
                 )
-        
-                if df.empty:
-                    logger.warning("No records found in PostgreSQL table %s", table_name)
-                    continue
 
-                # References logic
-                if source_type == "reference":
-                    destination = (f"reference/{table_name}.parquet")
-                    
-                    upload_pq_gcs(df, object_name=destination, gcs_hook=gcs_hook)
-                    
-                    logger.info("Wrote %d rows -> gs://%s/%s", len(df), BUCKET_NAME, destination)
-                    continue
-
-                # Archive/nrt logic
-                df["acq_date"] = pd.to_datetime(df["acq_date"], errors="coerce") # Partition prepare file spare
-
-                for acq_date, day_df in df.groupby(df["acq_date"].dt.date):
-                    
-                    date_str = acq_date.strftime("%Y-%m-%d")
-                    year = acq_date.strftime("%Y")
-                    month = acq_date.strftime("%m")
-                    
-                    destination = (
-                        f"{source_type}/{year}/"
-                        f"{month}/{table_name}_{date_str}.parquet"
-                    )
-
-                    upload_pq_gcs(day_df, object_name=destination, gcs_hook=gcs_hook)
-
-    ingest_postgres_to_gcs()
+    ingest()
         
 postgres_ingest_to_gsc()
